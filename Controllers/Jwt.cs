@@ -33,7 +33,7 @@ public class JwtController(Api.Interface.IClims clims) : ControllerBase
                 new(System.Security.Claims.ClaimTypes.Name, login.Username),
                 new(System.Security.Claims.ClaimTypes.Role, "RefreshRole")
             };
-            var refreshtoken = clims.GetToken(refreshclaims, DateTime.Now.AddMinutes(30));
+            var refreshtoken = clims.GetToken(refreshclaims, DateTime.Now.AddMinutes(20));
 
             Response.Cookies.Append("refresh_20261123_token", refreshtoken, new CookieOptions
             {
