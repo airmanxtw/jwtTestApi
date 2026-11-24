@@ -7,7 +7,7 @@ namespace jwtTestApi.Controllers;
 [ApiController]
 [EnableCors("PublicPolicy")]
 [Route("[controller]")]
-public class JwtController(Api.Interface.IClims clims) : ControllerBase
+public class JwtController(Api.Interface.IClims clims,IConfiguration configuration) : ControllerBase
 {
     [HttpGet("hello")]
     public IActionResult Hello()
@@ -15,6 +15,7 @@ public class JwtController(Api.Interface.IClims clims) : ControllerBase
         return Ok("Hello, world!");
     }
         
+    // 2. 登入取得AccessToken與RefreshToken
     [HttpPost("login")]
     public IActionResult Login([FromBody] Models.Login login)
     {
@@ -31,7 +32,9 @@ public class JwtController(Api.Interface.IClims clims) : ControllerBase
             var refreshclaims = new List<System.Security.Claims.Claim>
             {
                 new(System.Security.Claims.ClaimTypes.Name, login.Username),
-                new(System.Security.Claims.ClaimTypes.Role, "RefreshRole")
+                new(System.Security.Claims.ClaimTypes.Role, "RefreshRole"),
+                // 加一個自定義的ip
+                //new(System.Security.Claims.ClaimTypes.UserData, HttpContext.Connection.RemoteIpAddress?.ToString() ?? "")
             };
             var refreshtoken = clims.GetToken(refreshclaims, DateTime.Now.AddMinutes(20));
 
@@ -39,8 +42,9 @@ public class JwtController(Api.Interface.IClims clims) : ControllerBase
             {
                 HttpOnly = true,
                 Secure = true,
-                SameSite = SameSiteMode.None,
-                Expires = DateTimeOffset.Now.AddDays(7)
+                SameSite = configuration["SameSite"] == "Strict" ? SameSiteMode.Strict : SameSiteMode.None,
+                Expires = DateTimeOffset.Now.AddMinutes(20),
+                Path = "/jwtTestApi"
             });
 
             return Ok(accesstoken);
@@ -63,6 +67,7 @@ public class JwtController(Api.Interface.IClims clims) : ControllerBase
         return Ok("This is a JWT secure endpoint");
     }
 
+    // 3. 重新取得AccessToken, 使用RefreshToken驗證
     [Authorize(AuthenticationSchemes = "CookieJwt", Roles = "RefreshRole")]
     [HttpGet("refreshAccessToken")]
     public IActionResult RefreshAccessToken()
@@ -72,18 +77,23 @@ public class JwtController(Api.Interface.IClims clims) : ControllerBase
         return Ok(accesstoken);
     }
 
+    // 4. *** 重新取得RefreshToken, 使用RefreshToken驗證
     [Authorize(AuthenticationSchemes = "CookieJwt", Roles = "RefreshRole")]
     [HttpGet("refreshSelf")]
     public IActionResult RefreshSelf()
     {
         var refreshclaims = User.Claims.ToList();
+        // 從claims中取得使用者的資訊，例如IP地址
+        //var userIp = refreshclaims.FirstOrDefault(c => c.Type == System.Security.Claims.ClaimTypes.UserData)?.Value;
+
         var refreshtoken = clims.GetToken(refreshclaims, DateTime.Now.AddMinutes(30));
         Response.Cookies.Append("refresh_20261123_token", refreshtoken, new CookieOptions
         {
             HttpOnly = true,
             Secure = true,
-            SameSite = SameSiteMode.None,
-            Expires = DateTimeOffset.Now.AddMinutes(30)
+            SameSite = configuration["SameSite"] == "Strict" ? SameSiteMode.Strict : SameSiteMode.None,
+            Expires = DateTimeOffset.Now.AddMinutes(20),
+            Path = "/jwtTestApi"
         });
         return Ok();
     }
@@ -92,7 +102,10 @@ public class JwtController(Api.Interface.IClims clims) : ControllerBase
     [HttpGet("revokeRefreshToken")]
     public IActionResult RevokeRefreshToken()
     {
-        Response.Cookies.Delete("refresh_20261123_token");
+        Response.Cookies.Delete("refresh_20261123_token", new CookieOptions
+        {
+            Path = "/jwtTestApi"
+        });
         return Ok("Refresh token revoked");
     }
 

@@ -41,6 +41,7 @@ builder.Services.AddScoped<jwtTestApi.Api.Interface.IClims>(sp =>
     return new jwtTestApi.Api.Clims(AccessPrivate, issuret, audience);
 });
 
+// 1. 提供兩種api驗證模式，一種是預設的JwtBearer，一種是CookieJwt
 builder.Services.AddAuthentication(x =>
 {
     x.DefaultAuthenticateScheme = Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerDefaults.AuthenticationScheme;
@@ -62,6 +63,8 @@ builder.Services.AddAuthentication(x =>
         RequireExpirationTime = true, //過期時間
         ClockSkew = TimeSpan.Zero
     };    
+
+    // 設定JwtBearer事件，用於處理驗證失敗和Token驗證成功的情況
     option.Events = new JwtBearerEvents
     {
         OnAuthenticationFailed = c =>
@@ -91,6 +94,7 @@ builder.Services.AddAuthentication(x =>
         ClockSkew = TimeSpan.Zero
     };
 
+    // 設定CookieJwt事件，用於從Cookie中讀取Token
     options.Events = new JwtBearerEvents
     {
         OnMessageReceived = context =>
@@ -111,6 +115,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UsePathBase("/jwtTestApi");
 
 app.UseRouting();
 
