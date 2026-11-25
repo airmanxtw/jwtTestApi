@@ -106,7 +106,14 @@ builder.Services.AddAuthentication(x =>
         {
             // 如果要到資料庫檢查token，可以在這裡加入邏輯，例如查詢token是否存在或是否被撤銷
             Console.WriteLine("OnTokenValidated: " + context.SecurityToken);
+
+            // 如果Token不合法，可以呼叫context.Fail("Token無效");
+            // context.Fail("Token無效");
+            
             return Task.CompletedTask;
+
+            
+            
         }
         
     };
