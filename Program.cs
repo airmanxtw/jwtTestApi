@@ -101,7 +101,14 @@ builder.Services.AddAuthentication(x =>
         {
             context.Token = context.Request.Cookies["refresh_20261123_token"];
             return Task.CompletedTask;
+        },
+        OnTokenValidated = context =>
+        {
+            // 如果要到資料庫檢查token，可以在這裡加入邏輯，例如查詢token是否存在或是否被撤銷
+            Console.WriteLine("OnTokenValidated: " + context.SecurityToken);
+            return Task.CompletedTask;
         }
+        
     };
 });
 

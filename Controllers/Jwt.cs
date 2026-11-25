@@ -73,7 +73,7 @@ public class JwtController(Api.Interface.IClims clims,IConfiguration configurati
     public IActionResult RefreshAccessToken()
     {
         var refreshclaims = User.Claims.ToList();
-        var accesstoken = clims.GetToken(refreshclaims, DateTime.Now.AddMinutes(15));
+        var accesstoken = clims.GetToken(refreshclaims, DateTime.Now.AddSeconds(20));
         return Ok(accesstoken);
     }
 
